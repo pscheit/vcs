@@ -28,11 +28,13 @@ class GitTest extends \PHPUnit_Framework_TestCase
             ->setConstructorArgs(array($this->url, $this->adapter, $this->tmpdir))
             ->setMethods(null)
         ;
+        $this->isWindows = defined('PHP_WINDOWS_VERSION_MAJOR');
+        $this->cliQuote = $this->isWindows ? '"' : "'";
     }
 
     public function testCheckoutCommandline()
     {
-        $expected = sprintf('%s clone -b \'%s\' \'%s\' \'%s\'', $this->bin, 'master', $this->url, $this->tmpdir);
+        $expected = sprintf('%s clone -b %s %s %s', $this->bin, $this->quote('master'), $this->quote($this->url), $this->quote($this->tmpdir));
 
         $tmpdir = $this->tmpdir;
 
@@ -67,7 +69,7 @@ class GitTest extends \PHPUnit_Framework_TestCase
         $this->cli
             ->expects($this->at(0))
             ->method('execute')
-            ->with(sprintf('%s clone -b \'%s\' \'%s\' \'%s\'', $this->bin, 'master', $this->url, $this->tmpdir))
+            ->with(sprintf('%s clone -b %s %s %s', $this->bin, $this->quote('master'), $this->quote($this->url), $this->quote($this->tmpdir)))
             ->will($this->returnCallback(function() use ($tmpdir) {
                 $filesystem = new Filesystem();
                 $filesystem->mkdir($tmpdir);
@@ -105,15 +107,16 @@ class GitTest extends \PHPUnit_Framework_TestCase
         $this->setUp();
 
         return array(
-                array('/dir1', null, 10, sprintf('%s log -n \'10\' --pretty=\'%s\' \'%s\'',
+                array('/dir1', null, 10, sprintf("%s log -n %s --pretty=%s %s",
                         $this->bin,
-                        Git::PRETTY_FORMAT,
-                        '/dir1'
+                        $this->quote(10),
+                        $this->quote(Git::PRETTY_FORMAT),
+                        $this->quote('/dir1')
                 )),
-                array('/dir1', null, null, sprintf('%s log --pretty=\'%s\' \'%s\'',
+                array('/dir1', null, null, sprintf('%s log --pretty=%s %s',
                         $this->bin,
-                        Git::PRETTY_FORMAT,
-                        '/dir1'
+                        $this->quote(Git::PRETTY_FORMAT),
+                        $this->quote('/dir1')
                 )),
         );
     }
@@ -129,7 +132,7 @@ class GitTest extends \PHPUnit_Framework_TestCase
         $this->cli
             ->expects($this->at(0))
             ->method('execute')
-            ->with(sprintf('%s clone -b \'%s\' \'%s\' \'%s\'', $this->bin, 'master', $this->url, $this->tmpdir))
+            ->with(sprintf('%s clone -b %s %s %s', $this->bin, $this->quote('master'), $this->quote($this->url), $this->quote($this->tmpdir)))
             ->will($this->returnCallback(function() use ($tmpdir) {
                 $filesystem = new Filesystem();
                 $filesystem->mkdir($tmpdir);
@@ -170,6 +173,11 @@ class GitTest extends \PHPUnit_Framework_TestCase
     {
         $filesystem = new Filesystem();
         $filesystem->remove($this->tmpdir);
+    }
+
+    protected function quote($argument)
+    {
+        return $this->cliQuote.$argument.$this->cliQuote;
     }
 }
 

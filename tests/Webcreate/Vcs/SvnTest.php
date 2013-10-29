@@ -26,6 +26,8 @@ class SvnTest extends PHPUnit_Framework_TestCase
             ->setConstructorArgs(array($this->url, $this->adapter))
             ->setMethods(null)
         ;
+        $this->isWindows = defined('PHP_WINDOWS_VERSION_MAJOR');
+        $this->cliQuote = $this->isWindows ? '"' : "'";
     }
 
     public function testCheckoutCommandline()
@@ -36,7 +38,7 @@ class SvnTest extends PHPUnit_Framework_TestCase
 
         $dest = sys_get_temp_dir();
 
-        $expected = sprintf("%s checkout '%s' '%s' --non-interactive", $this->bin, $this->url . '/trunk', $dest);
+        $expected = sprintf("%s checkout %s %s --non-interactive", $this->bin, $this->quote($this->url . '/trunk'), $this->quote($dest));
 
         $this->cli
             ->expects($this->once())
@@ -100,7 +102,7 @@ class SvnTest extends PHPUnit_Framework_TestCase
 
         $path = '/path/to/test';
 
-        $expected = sprintf("%s list --xml '%s' --non-interactive --username 'user' --password 'userpass'", $this->bin, $this->url . '/trunk' . $path);
+        $expected = sprintf("%s list --xml %s --non-interactive --username %s --password %s", $this->bin, $this->quote($this->url . '/trunk' . $path), $this->quote('user'), $this->quote('userpass'));
 
         $this->cli
             ->expects($this->once())
@@ -155,17 +157,17 @@ class SvnTest extends PHPUnit_Framework_TestCase
         $this->setUp();
 
         return array(
-            array('path/to/import', '/', 'Importing stuff', sprintf("%s import '%s' '%s' -m '%s' --non-interactive",
+            array('path/to/import', '/', 'Importing stuff', sprintf("%s import %s %s -m %s --non-interactive",
                     $this->bin,
-                    'path/to/import',
-                    $this->url . '/trunk',
-                    'Importing stuff'
+                    $this->quote('path/to/import'),
+                    $this->quote($this->url . '/trunk'),
+                    $this->quote('Importing stuff')
             )),
-            array('path/to/import', '', 'Importing stuff', sprintf("%s import '%s' '%s' -m '%s' --non-interactive",
+            array('path/to/import', '', 'Importing stuff', sprintf("%s import %s %s -m %s --non-interactive",
                     $this->bin,
-                    'path/to/import',
-                    $this->url . '/trunk',
-                    'Importing stuff'
+                    $this->quote('path/to/import'),
+                    $this->quote($this->url . '/trunk'),
+                    $this->quote('Importing stuff')
             ))
         );
     }
@@ -224,33 +226,36 @@ class SvnTest extends PHPUnit_Framework_TestCase
                 $path = '/',
                 null,
                 null,
-                sprintf("%s log --xml '%s' --non-interactive --username '%s' --password '%s'",
+                sprintf("%s log --xml %s --non-interactive --username %s --password %s",
                         $this->bin,
-                        $this->url . '/trunk',
-                        $this->username,
-                        $this->password
+                        $this->quote($this->url . '/trunk'),
+                        $this->quote($this->username),
+                        $this->quote($this->password)
                 )
             ),
             array(
                 $path = '',
                 '1234',
                 null,
-                sprintf("%s log -r '1234' --xml '%s' --non-interactive --username '%s' --password '%s'",
+                sprintf("%s log -r %s --xml %s --non-interactive --username %s --password %s",
                         $this->bin,
-                        $this->url . '/trunk',
-                        $this->username,
-                        $this->password
+                        $this->quote(1234),
+                        $this->quote($this->url . '/trunk'),
+                        $this->quote($this->username),
+                        $this->quote($this->password)
                 )
             ),
             array(
                 $path = '/test',
                 '1234',
                 2,
-                sprintf("%s log -r '1234' --limit '2' --xml '%s' --non-interactive --username '%s' --password '%s'",
+                sprintf("%s log -r %s --limit %s --xml %s --non-interactive --username %s --password %s",
                         $this->bin,
-                        $this->url . '/trunk' . $path,
-                        $this->username,
-                        $this->password
+                        $this->quote(1234),
+                        $this->quote(2),
+                        $this->quote($this->url . '/trunk' . $path),
+                        $this->quote($this->username),
+                        $this->quote($this->password)
                 )
             ),
         );
@@ -264,11 +269,11 @@ class SvnTest extends PHPUnit_Framework_TestCase
         ;
         $svn->setCredentials($this->username, $this->password);
 
-        $expected = sprintf("%s cat '%s' --non-interactive --username '%s' --password '%s'",
+        $expected = sprintf("%s cat %s --non-interactive --username %s --password %s",
                 $this->bin,
-                $this->url . '/trunk/test',
-                $this->username,
-                $this->password
+                $this->quote($this->url . '/trunk/test'),
+                $this->quote($this->username),
+                $this->quote($this->password)
         );
 
         $this->cli
@@ -289,12 +294,12 @@ class SvnTest extends PHPUnit_Framework_TestCase
         ;
         $svn->setCredentials($this->username, $this->password);
 
-        $expected = sprintf("%s diff '%s' '%s' --summarize --xml --non-interactive --username '%s' --password '%s'",
+        $expected = sprintf("%s diff %s %s --summarize --xml --non-interactive --username %s --password %s",
                 $this->bin,
-                $this->url . '/trunk@2',
-                $this->url . '/trunk@100',
-                $this->username,
-                $this->password
+                $this->quote($this->url . '/trunk@2'),
+                $this->quote($this->url . '/trunk@100'),
+                $this->quote($this->username),
+                $this->quote($this->password)
         );
 
         $this->cli
@@ -328,5 +333,10 @@ class SvnTest extends PHPUnit_Framework_TestCase
 
         $this->assertInternalType('array', $result);
         $this->assertCount(7, $result);
+    }
+
+    protected function quote($argument)
+    {
+        return $this->cliQuote.$argument.$this->cliQuote;
     }
 }

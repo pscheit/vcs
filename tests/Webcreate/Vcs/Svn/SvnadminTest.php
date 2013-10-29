@@ -13,6 +13,8 @@ class SvnadminTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->svndir = sys_get_temp_dir();
+        $this->isWindows = defined('PHP_WINDOWS_VERSION_MAJOR');
+        $this->cliQuote = $this->isWindows ? '"' : "'";
     }
 
     public function testCreate()
@@ -21,7 +23,7 @@ class SvnadminTest extends PHPUnit_Framework_TestCase
         $cli
             ->expects($this->once())
             ->method('execute')
-            ->with('/usr/local/bin/svnadmin create \''.$this->svndir.'/test_test\'')
+            ->with('/usr/local/bin/svnadmin create '.$this->cliQuote.$this->svndir.'/test_test'.$this->cliQuote)
             ->will($this->returnValue(0))
         ;
 
